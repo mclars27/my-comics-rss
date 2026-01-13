@@ -1,12 +1,9 @@
 name: Build Comics RSS
 
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: "15 12 * * *"
-
-    permissions:
-  contents: write
+  workflow_dispatch:
+  schedule:
+    - cron: "15 12 * * *"
 
 jobs:
   build:
@@ -18,23 +15,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python make_feed.py
 
-      - name: Build feed
-        run: python make_feed.py
-
-      - name: Configure git name
-        run: git config user.name "github-actions"
-
-      - name: Configure git email
-        run: git config user.email "actions@github.com"
-
-      - name: Stage files
-        run: git add docs/comics.xml state.json
-
-      - name: Commit
-        run: git commit -m "Update comics feed" || true
-
-      - name: Push
-        run: git push
+      - run: |
+          git config user.name github-actions
+          git config user.email actions@github.com
+          git add docs/comics.xml state.json
+          git commit -m "Update comics feed" || true
+          git push
