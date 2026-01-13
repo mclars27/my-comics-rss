@@ -27,9 +27,9 @@ HEADERS = {
 }
 
 def pages_base_url() -> str:
-    repo = os.getenv("GITHUB_REPOSITORY", "mclars27/my-comics-rss")  # owner/name
+    repo = os.getenv("GITHUB_REPOSITORY", "mclars27/my-comics-rss")
     owner, name = repo.split("/", 1)
-    return f"https://{owner}.github.io/{name}"
+    return f"https://{owner}.github.io/{name}/docs"
 
 def load_state():
     if os.path.exists(STATE_PATH):
