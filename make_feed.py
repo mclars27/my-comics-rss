@@ -7,7 +7,6 @@ import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
 
-# Comics to include
 COMICS = [
     {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
     {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
@@ -23,29 +22,54 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+def _clean_url(u: str) -> str:
+    # Unescape common JSON/HTML escaping patterns
+    u = u.replace("\\/", "/")
+    u = u.replace("&amp;", "&")
+    u = u.replace("\\u0026", "&")
+    return u.strip()
+
 def fetch_image(page_url: str) -> str:
     r = requests.get(page_url, headers=HEADERS, timeout=30)
     r.raise_for_status()
     html = r.text
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1) Prefer the real strip panel host
+    # 1) Best: any real panel image in the DOM
+    candidates = []
+    for img in soup.find_all("img"):
+        src = (img.get("src") or "").strip()
+        if not src:
+            continue
+        if "GC_Social_FB_" in src:
+            continue
+        if "featureassets.gocomics.com/assets/" in src or "assets.amuniversal.com/" in src:
+            candidates.append(src)
+
+    # Prefer the high-res version if present (width=2800)
+    for src in candidates:
+        if "width=2800" in src:
+            return _clean_url(src)
+    if candidates:
+        return _clean_url(candidates[0])
+
+    # 2) Raw HTML: featureassets URLs sometimes appear escaped
+    m = re.search(r"https://featureassets\.gocomics\.com/assets/[^\s\"']+", html)
+    if m and "GC_Social_FB_" not in m.group(0):
+        return _clean_url(m.group(0))
+
+    m = re.search(r"https:\\/\\/featureassets\.gocomics\.com\\/assets\\/[^\"'\\s<]+", html)
+    if m:
+        u = _clean_url(m.group(0))
+        if "GC_Social_FB_" not in u:
+            return u
+
+    # 3) Raw HTML: amuniversal panel host
     m = re.search(r"https://assets\.amuniversal\.com/[A-Za-z0-9]+", html)
     if m:
-        return m.group(0)
+        return _clean_url(m.group(0))
 
-    # 2) Next best: featureassets host
-    m = re.search(r"https://featureassets\.gocomics\.com/assets/[^\s\"']+", html)
-    if m:
-        return m.group(0)
-
-    # 3) Next: CMS assets that are NOT the FB social card
-    cms_matches = re.findall(r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+", html)
-    for url in cms_matches:
-        if "GC_Social_FB_" not in url:
-            return url
-
-    # 4) Last resort: social meta tags (often promo cards)
+    # 4) Meta tags, but never accept the social card
     for meta in [
         ("property", "og:image"),
         ("property", "og:image:secure_url"),
@@ -54,7 +78,10 @@ def fetch_image(page_url: str) -> str:
     ]:
         tag = soup.find("meta", attrs={meta[0]: meta[1]})
         if tag and tag.get("content"):
-            return tag["content"].strip()
+            u = _clean_url(tag["content"])
+            if "GC_Social_FB_" in u:
+                continue
+            return u
 
     raise RuntimeError("Could not find comic image")
 
@@ -104,7 +131,7 @@ def main():
 
         new_items.append({
             "id": key,
-            "title": f"{c['name']} — {today}",
+            "title": f"{c['name']} - {today}",
             "link": c["url"],
             "date": now.isoformat(),
             "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{img_url}" /></p>',
