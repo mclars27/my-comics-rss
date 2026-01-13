@@ -27,9 +27,17 @@ HEADERS = {
 }
 
 def pages_base_url() -> str:
+    """
+    IMPORTANT:
+    GitHub Pages is serving from the /docs folder as the site root.
+    Therefore:
+      - docs/comics.xml is published at: https://<owner>.github.io/<repo>/comics.xml
+      - docs/images/* is published at: https://<owner>.github.io/<repo>/images/*
+    So we must NOT include '/docs' in public URLs.
+    """
     repo = os.getenv("GITHUB_REPOSITORY", "mclars27/my-comics-rss")
     owner, name = repo.split("/", 1)
-    return f"https://{owner}.github.io/{name}/docs"
+    return f"https://{owner}.github.io/{name}"
 
 def load_state():
     if os.path.exists(STATE_PATH):
@@ -44,7 +52,7 @@ def save_state(state):
 def build_feed(entries):
     fg = FeedGenerator()
     fg.title("My Daily Comics")
-    fg.link(href="https://www.gocomics.com")
+    fg.link(href=pages_base_url())
     fg.description("Private RSS feed for Garfield and Peanuts")
     fg.language("en")
 
@@ -55,6 +63,9 @@ def build_feed(entries):
         fe.link(href=e["link"])
         fe.pubDate(datetime.fromisoformat(e["date"]))
         fe.description(e["html"])
+
+        # If you want Reeder to be extra-likely to show the image, enable this:
+        # fe.enclosure(e["img"], str(e.get("length", 0)), e.get("mime", "image/jpeg"))
 
     os.makedirs(OUT_DIR, exist_ok=True)
     fg.rss_file(FEED_PATH, pretty=True)
@@ -103,7 +114,6 @@ def fetch_real_strip_image_url(page_url: str) -> str:
             urls = []
             _walk_for_urls(data, urls)
 
-            # Keep only likely image hosts
             urls = [u for u in urls if (
                 "assets.amuniversal.com/" in u
                 or "featureassets.gocomics.com/assets/" in u
@@ -116,17 +126,18 @@ def fetch_real_strip_image_url(page_url: str) -> str:
         except Exception:
             pass
 
-    # Fallback: scan raw HTML for the real panel hosts (sometimes embedded/escaped)
+    # Fallback: scan raw HTML
     patterns = [
         r"https://assets\.amuniversal\.com/[A-Za-z0-9]+",
         r"https://featureassets\.gocomics\.com/assets/[^\s\"']+",
+        r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+",
     ]
     for pat in patterns:
         m = re.search(pat, html)
         if m and not _is_social_card(m.group(0)):
             return m.group(0)
 
-    raise RuntimeError("Could not find real strip image URL (Next.js data not found or changed)")
+    raise RuntimeError("Could not find real strip image URL (site markup may have changed)")
 
 def _guess_ext(url: str) -> str:
     path = urlparse(url).path.lower()
@@ -149,6 +160,7 @@ def download_and_host_image(img_url: str, slug: str, day: str) -> str:
         with open(local_path, "wb") as f:
             f.write(ir.content)
 
+    # NOTE: no /docs here
     return f"{pages_base_url()}/images/{filename}"
 
 def main():
@@ -162,7 +174,6 @@ def main():
         real_img_url = fetch_real_strip_image_url(c["url"])
         key = f"{c['slug']}:{today}"
 
-        # Skip if today's strip URL hasn't changed
         if state["seen"].get(key) == real_img_url:
             continue
 
@@ -171,10 +182,14 @@ def main():
 
         new_items.append({
             "id": key,
-            "title": f"{c['name']} — {today}",
+            "title": f"{c['name']} - {today}",
             "link": c["url"],
             "date": now.isoformat(),
-            "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{hosted_img_url}" /></p>',
+            "img": hosted_img_url,
+            "html": (
+                f'<p><a href="{c["url"]}">{c["name"]}</a></p>'
+                f'<p><img src="{hosted_img_url}" /></p>'
+            ),
         })
 
     state["history"] = (new_items + state["history"])[:90]
