@@ -16,7 +16,7 @@ FEED_PATH = os.path.join(OUT_DIR, "comics.xml")
 STATE_PATH = "state.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; ComicsRSS/1.0)"
+    "User-Agent": "Mozilla/5.0"
 }
 
 def fetch_image(page_url):
