@@ -23,6 +23,6 @@ jobs:
 
       - run: git config user.name "github-actions"
       - run: git config user.email "actions@github.com"
-      - run: git add docs/comics.xml state.json docs/images
+      - run: git add docs/comics.xml state.json docs/images/* || true
       - run: git commit -m "Update comics feed" || true
       - run: git push
