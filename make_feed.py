@@ -7,8 +7,8 @@ from feedgen.feed import FeedGenerator
 
 # Comics to include
 COMICS = [
-    {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
-    {"name": "Peanuts",  "slug": "peanuts",  "url": "https://www.gocomics.com/peanuts"},
+    {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
+    {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
 ]
 
 OUT_DIR = "docs"
