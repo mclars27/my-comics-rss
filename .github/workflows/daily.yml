@@ -2,14 +2,27 @@ name: Build Comics RSS
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "15 12 * * *"
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - run: pip install -r requirements.txt
       - run: python make_feed.py
+
+      - run: git config user.name "github-actions"
+      - run: git config user.email "actions@github.com"
+      - run: git add docs/comics.xml state.json
+      - run: git commit -m "Update comics feed" || true
+      - run: git push
