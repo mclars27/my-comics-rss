@@ -1,6 +1,8 @@
 import os
 import json
+import re
 from datetime import datetime, timezone
+
 import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
@@ -16,29 +18,59 @@ FEED_PATH = os.path.join(OUT_DIR, "comics.xml")
 STATE_PATH = "state.json"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0"
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
-def fetch_image(page_url):
+def fetch_image(page_url: str) -> str:
     r = requests.get(page_url, headers=HEADERS, timeout=30)
     r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
 
-    # Most stable selector on GoComics
-    og = soup.find("meta", property="og:image")
-    if og and og.get("content"):
-        return og["content"]
+    html = r.text
+    soup = BeautifulSoup(html, "html.parser")
+
+    # 1) Social meta tags (sometimes present, sometimes not)
+    for meta in [
+        ("property", "og:image"),
+        ("property", "og:image:secure_url"),
+        ("name", "twitter:image"),
+        ("name", "twitter:image:src"),
+    ]:
+        tag = soup.find("meta", attrs={meta[0]: meta[1]})
+        if tag and tag.get("content"):
+            return tag["content"].strip()
+
+    # 2) Fallback: search for common GoComics asset hosts in the raw HTML
+    patterns = [
+        r"https://featureassets\.gocomics\.com/assets/[^\s\"']+",
+        r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+",
+        r"https://assets\.amuniversal\.com/[^\s\"']+",
+    ]
+
+    for pat in patterns:
+        m = re.search(pat, html)
+        if m:
+            return m.group(0).strip()
+
+    # 3) Last fallback: look for any image URL that smells like the strip
+    # (useful if they rename hosts)
+    imgs = soup.find_all("img")
+    for img in imgs:
+        src = img.get("src") or ""
+        if "gocomics" in src or "amuniversal" in src:
+            return src.strip()
 
     raise RuntimeError("Could not find comic image")
 
 def load_state():
     if os.path.exists(STATE_PATH):
-        with open(STATE_PATH, "r") as f:
+        with open(STATE_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     return {"seen": {}, "history": []}
 
 def save_state(state):
-    with open(STATE_PATH, "w") as f:
+    with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
 
 def build_feed(entries):
@@ -80,7 +112,7 @@ def main():
             "title": f"{c['name']} — {today}",
             "link": c["url"],
             "date": now,
-            "html": f'<img src="{img_url}" />'
+            "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{img_url}" /></p>',
         })
 
     state["history"] = (new_items + state["history"])[:90]
