@@ -30,7 +30,7 @@ def fetch_image(page_url: str) -> str:
     html = r.text
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1) Social meta tags (sometimes present, sometimes not)
+    # 1) Social meta tags
     for meta in [
         ("property", "og:image"),
         ("property", "og:image:secure_url"),
@@ -47,19 +47,16 @@ def fetch_image(page_url: str) -> str:
         r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+",
         r"https://assets\.amuniversal\.com/[^\s\"']+",
     ]
-
     for pat in patterns:
         m = re.search(pat, html)
         if m:
             return m.group(0).strip()
 
-    # 3) Last fallback: look for any image URL that smells like the strip
-    # (useful if they rename hosts)
-    imgs = soup.find_all("img")
-    for img in imgs:
-        src = img.get("src") or ""
+    # 3) Last fallback: any image URL that looks relevant
+    for img in soup.find_all("img"):
+        src = (img.get("src") or "").strip()
         if "gocomics" in src or "amuniversal" in src:
-            return src.strip()
+            return src
 
     raise RuntimeError("Could not find comic image")
 
@@ -85,7 +82,7 @@ def build_feed(entries):
         fe.id(e["id"])
         fe.title(e["title"])
         fe.link(href=e["link"])
-        fe.pubDate(e["date"])
+        fe.pubDate(datetime.fromisoformat(e["date"]))
         fe.description(e["html"])
 
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -111,7 +108,7 @@ def main():
             "id": key,
             "title": f"{c['name']} — {today}",
             "link": c["url"],
-            "date": now,
+            "date": now.isoformat(),
             "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{img_url}" /></p>',
         })
 
