@@ -1,21 +1,28 @@
 import os
 import json
 import re
+import hashlib
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
 from feedgen.feed import FeedGenerator
 
-# Comics to include
 COMICS = [
     {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
     {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
 ]
 
 OUT_DIR = "docs"
+IMG_DIR = os.path.join(OUT_DIR, "images")
 FEED_PATH = os.path.join(OUT_DIR, "comics.xml")
 STATE_PATH = "state.json"
+
+# Change this to your Pages base once Pages is enabled.
+# While Pages is off, leave it blank and Reeder will still show items,
+# but images will work best once Pages is on.
+PAGES_BASE = "https://mclars27.github.io/my-comics-rss"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -23,14 +30,13 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
-def fetch_image(page_url: str) -> str:
+def fetch_image_url(page_url: str) -> str:
     r = requests.get(page_url, headers=HEADERS, timeout=30)
     r.raise_for_status()
-
     html = r.text
     soup = BeautifulSoup(html, "html.parser")
 
-    # 1) Social meta tags
+    # Meta tags first
     for meta in [
         ("property", "og:image"),
         ("property", "og:image:secure_url"),
@@ -41,7 +47,7 @@ def fetch_image(page_url: str) -> str:
         if tag and tag.get("content"):
             return tag["content"].strip()
 
-    # 2) Fallback: search for common GoComics asset hosts in the raw HTML
+    # Raw HTML fallback for common hosts
     patterns = [
         r"https://featureassets\.gocomics\.com/assets/[^\s\"']+",
         r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+",
@@ -52,13 +58,37 @@ def fetch_image(page_url: str) -> str:
         if m:
             return m.group(0).strip()
 
-    # 3) Last fallback: any image URL that looks relevant
-    for img in soup.find_all("img"):
-        src = (img.get("src") or "").strip()
-        if "gocomics" in src or "amuniversal" in src:
-            return src
+    raise RuntimeError("Could not find comic image URL")
 
-    raise RuntimeError("Could not find comic image")
+def download_image(img_url: str, filename_base: str) -> str:
+    os.makedirs(IMG_DIR, exist_ok=True)
+
+    # Use a stable hash so we don't re-download the same image
+    h = hashlib.sha1(img_url.encode("utf-8")).hexdigest()[:12]
+
+    # Guess extension
+    path = urlparse(img_url).path.lower()
+    ext = ".jpg"
+    for candidate in [".png", ".jpg", ".jpeg", ".gif", ".webp"]:
+        if candidate in path:
+            ext = candidate
+            break
+
+    local_name = f"{filename_base}-{h}{ext}"
+    local_path = os.path.join(IMG_DIR, local_name)
+
+    if not os.path.exists(local_path):
+        ir = requests.get(img_url, headers=HEADERS, timeout=30)
+        ir.raise_for_status()
+        with open(local_path, "wb") as f:
+            f.write(ir.content)
+
+    # Return the URL that RSS readers can load
+    if PAGES_BASE:
+        return f"{PAGES_BASE}/images/{local_name}"
+    else:
+        # fallback to relative path (works once hosted)
+        return f"images/{local_name}"
 
 def load_state():
     if os.path.exists(STATE_PATH):
@@ -96,11 +126,15 @@ def main():
     new_items = []
 
     for c in COMICS:
-        img_url = fetch_image(c["url"])
+        img_url = fetch_image_url(c["url"])
         key = f"{c['slug']}:{today}"
 
+        # If unchanged today, skip
         if state["seen"].get(key) == img_url:
             continue
+
+        # Download and host the image ourselves
+        hosted_img = download_image(img_url, f"{c['slug']}-{today}")
 
         state["seen"][key] = img_url
 
@@ -109,7 +143,7 @@ def main():
             "title": f"{c['name']} — {today}",
             "link": c["url"],
             "date": now.isoformat(),
-            "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{img_url}" /></p>',
+            "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p><img src="{hosted_img}" /></p>',
         })
 
     state["history"] = (new_items + state["history"])[:90]
