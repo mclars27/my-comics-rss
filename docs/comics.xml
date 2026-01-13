@@ -7,7 +7,7 @@
     <docs>http://www.rssboard.org/rss-specification</docs>
     <generator>python-feedgen</generator>
     <language>en</language>
-    <lastBuildDate>Tue, 13 Jan 2026 16:25:30 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 13 Jan 2026 17:00:33 +0000</lastBuildDate>
     <item>
       <title>Peanuts — 2026-01-13</title>
       <link>https://www.gocomics.com/peanuts</link>
@@ -21,6 +21,20 @@
       <description>&lt;p&gt;&lt;a href="https://www.gocomics.com/garfield"&gt;Garfield&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;img src="https://gocomicscmsassets.gocomics.com/staging-assets/assets/GC_Social_FB_Garfield_8df2215f8b.jpg" /&gt;&lt;/p&gt;</description>
       <guid isPermaLink="false">garfield:2026-01-13</guid>
       <pubDate>Tue, 13 Jan 2026 16:25:28 +0000</pubDate>
+    </item>
+    <item>
+      <title>Peanuts — 2026-01-13</title>
+      <link>https://www.gocomics.com/peanuts</link>
+      <description>&lt;p&gt;&lt;a href="https://www.gocomics.com/peanuts"&gt;Peanuts&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;img src="https://mclars27.github.io/my-comics-rss/images/peanuts-2026-01-13-f2719d451edc.jpg" /&gt;&lt;/p&gt;</description>
+      <guid isPermaLink="false">peanuts:2026-01-13</guid>
+      <pubDate>Tue, 13 Jan 2026 17:00:31 +0000</pubDate>
+    </item>
+    <item>
+      <title>Garfield — 2026-01-13</title>
+      <link>https://www.gocomics.com/garfield</link>
+      <description>&lt;p&gt;&lt;a href="https://www.gocomics.com/garfield"&gt;Garfield&lt;/a&gt;&lt;/p&gt;&lt;p&gt;&lt;img src="https://mclars27.github.io/my-comics-rss/images/garfield-2026-01-13-c1febc92c12d.jpg" /&gt;&lt;/p&gt;</description>
+      <guid isPermaLink="false">garfield:2026-01-13</guid>
+      <pubDate>Tue, 13 Jan 2026 17:00:31 +0000</pubDate>
     </item>
   </channel>
 </rss>
