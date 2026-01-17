@@ -7,9 +7,27 @@
     "garfield:2026-01-15": "https://featureassets.gocomics.com/assets/4f802f80cfd6013ebadd005056a9545d",
     "peanuts:2026-01-15": "https://featureassets.gocomics.com/assets/574c45f0c7e6013ebadd005056a9545d",
     "garfield:2026-01-16": "https://featureassets.gocomics.com/assets/5203a5a0cfd6013ebadd005056a9545d",
-    "peanuts:2026-01-16": "https://featureassets.gocomics.com/assets/59b1eaf0c7e6013ebadd005056a9545d"
+    "peanuts:2026-01-16": "https://featureassets.gocomics.com/assets/59b1eaf0c7e6013ebadd005056a9545d",
+    "garfield:2026-01-17": "https://featureassets.gocomics.com/assets/54a7d8e0cfd6013ebadd005056a9545d",
+    "peanuts:2026-01-17": "https://featureassets.gocomics.com/assets/5c2c9810c7e6013ebadd005056a9545d"
   },
   "history": [
+    {
+      "id": "garfield:2026-01-17",
+      "title": "Garfield - 2026-01-17",
+      "link": "https://www.gocomics.com/garfield",
+      "date": "2026-01-17T13:00:35.533759+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/garfield-2026-01-17-98d35fbed4ea.jpg",
+      "html": "<p><a href=\"https://www.gocomics.com/garfield\">Garfield</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/garfield-2026-01-17-98d35fbed4ea.jpg\" /></p>"
+    },
+    {
+      "id": "peanuts:2026-01-17",
+      "title": "Peanuts - 2026-01-17",
+      "link": "https://www.gocomics.com/peanuts",
+      "date": "2026-01-17T13:00:35.533759+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/peanuts-2026-01-17-22abb962b684.jpg",
+      "html": "<p><a href=\"https://www.gocomics.com/peanuts\">Peanuts</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/peanuts-2026-01-17-22abb962b684.jpg\" /></p>"
+    },
     {
       "id": "garfield:2026-01-16",
       "title": "Garfield - 2026-01-16",
