@@ -1,3 +1,4 @@
+```python
 import os
 import json
 import re
@@ -14,6 +15,7 @@ COMICS = [
     {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
     {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
     {"name": "Calvin and Hobbes", "slug": "calvinandhobbes", "url": "https://www.gocomics.com/calvinandhobbes"},
+    {"name": "The Far Side", "slug": "farside", "url": "https://www.thefarside.com/"},
 ]
 
 OUT_DIR = "docs"
@@ -54,7 +56,7 @@ def build_feed(entries):
     fg = FeedGenerator()
     fg.title("My Daily Comics")
     fg.link(href=pages_base_url())
-    fg.description("Private RSS feed for Garfield and Peanuts")
+    fg.description("Private RSS feed for Garfield, Peanuts, Calvin and Hobbes, and The Far Side")
     fg.language("en")
 
     for e in entries:
@@ -64,8 +66,7 @@ def build_feed(entries):
         fe.link(href=e["link"])
         fe.pubDate(datetime.fromisoformat(e["date"]))
         fe.description(e["html"])
-
-        # If you want Reeder to be extra-likely to show the image, enable this:
+        # Optional:
         # fe.enclosure(e["img"], str(e.get("length", 0)), e.get("mime", "image/jpeg"))
 
     os.makedirs(OUT_DIR, exist_ok=True)
@@ -79,6 +80,8 @@ def _candidate_score(url: str) -> int:
     s = 0
     if "assets.amuniversal.com/" in url:
         s += 100
+    if "featureassets.amuniversal.com/assets/" in url:
+        s += 95
     if "featureassets.gocomics.com/assets/" in url:
         s += 80
     if "gocomicscmsassets.gocomics.com/" in url:
@@ -107,7 +110,7 @@ def fetch_real_strip_image_url(page_url: str) -> str:
 
     soup = BeautifulSoup(html, "html.parser")
 
-    # Next.js payload
+    # Next.js payload (GoComics)
     next_data = soup.find("script", id="__NEXT_DATA__")
     if next_data and next_data.string:
         try:
@@ -115,11 +118,16 @@ def fetch_real_strip_image_url(page_url: str) -> str:
             urls = []
             _walk_for_urls(data, urls)
 
-            urls = [u for u in urls if (
-                "assets.amuniversal.com/" in u
-                or "featureassets.gocomics.com/assets/" in u
-                or "gocomicscmsassets.gocomics.com/" in u
-            ) and not _is_social_card(u)]
+            urls = [
+                u for u in urls
+                if (
+                    "assets.amuniversal.com/" in u
+                    or "featureassets.gocomics.com/assets/" in u
+                    or "gocomicscmsassets.gocomics.com/" in u
+                    or "featureassets.amuniversal.com/assets/" in u
+                )
+                and not _is_social_card(u)
+            ]
 
             if urls:
                 urls.sort(key=_candidate_score, reverse=True)
@@ -127,16 +135,22 @@ def fetch_real_strip_image_url(page_url: str) -> str:
         except Exception:
             pass
 
-    # Fallback: scan raw HTML
+    # Fallback: scan raw HTML (collect all candidates, then score)
     patterns = [
         r"https://assets\.amuniversal\.com/[A-Za-z0-9]+",
         r"https://featureassets\.gocomics\.com/assets/[^\s\"']+",
         r"https://gocomicscmsassets\.gocomics\.com/[^\s\"']+",
+        r"https://featureassets\.amuniversal\.com/assets/[^\s\"']+",
     ]
+
+    urls = []
     for pat in patterns:
-        m = re.search(pat, html)
-        if m and not _is_social_card(m.group(0)):
-            return m.group(0)
+        urls.extend(re.findall(pat, html))
+
+    urls = [u for u in urls if not _is_social_card(u)]
+    if urls:
+        urls.sort(key=_candidate_score, reverse=True)
+        return urls[0]
 
     raise RuntimeError("Could not find real strip image URL (site markup may have changed)")
 
@@ -175,8 +189,10 @@ def main():
         real_img_url = fetch_real_strip_image_url(c["url"])
         key = f"{c['slug']}:{today}"
 
-        if state["seen"].get(key) == real_img_url:
-            continue
+        # Calvin is often a rerun on GoComics, publish anyway (daily feed behavior)
+        if c["slug"] != "calvinandhobbes":
+            if state["seen"].get(key) == real_img_url:
+                continue
 
         hosted_img_url = download_and_host_image(real_img_url, c["slug"], today)
         state["seen"][key] = real_img_url
@@ -199,3 +215,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+```
