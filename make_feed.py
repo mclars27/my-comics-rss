@@ -13,6 +13,7 @@ from feedgen.feed import FeedGenerator
 COMICS = [
     {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
     {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
+    {"name": "Calvin and Hobbes", "slug": "calvinandhobbes", "url": "https://www.gocomics.com/calvinandhobbes"},
 ]
 
 OUT_DIR = "docs"
