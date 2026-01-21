@@ -13,9 +13,45 @@
     "garfield:2026-01-18": "https://featureassets.gocomics.com/assets/cfe291d0d38d013ebadd005056a9545d",
     "peanuts:2026-01-18": "https://featureassets.gocomics.com/assets/4d94eac0d38d013ebadd005056a9545d",
     "garfield:2026-01-19": "https://featureassets.gocomics.com/assets/c6e9a1f0bd9b013eb960005056a9545d",
-    "peanuts:2026-01-19": "https://featureassets.gocomics.com/assets/40c8f920ccb1013ebadd005056a9545d"
+    "peanuts:2026-01-19": "https://featureassets.gocomics.com/assets/40c8f920ccb1013ebadd005056a9545d",
+    "garfield:2026-01-21": "https://featureassets.gocomics.com/assets/d42ad810bd9b013eb960005056a9545d?optimizer=image&amp;width=2800&amp;quality=85",
+    "peanuts:2026-01-21": "https://featureassets.gocomics.com/assets/45d91e20ccb1013ebadd005056a9545d?optimizer=image&amp;width=2800&amp;quality=85",
+    "calvinandhobbes:2026-01-21": "https://featureassets.gocomics.com/assets/1bdeacb0bce3013eb960005056a9545d?optimizer=image&amp;width=2800&amp;quality=85",
+    "farside:2026-01-21": "https://siteassets.thefarside.com/uploads/social_images/Final-Social-Share-2019-Updated2021-086d9305-f5f3-4749-a9cf-66c953ee7cd3.jpg"
   },
   "history": [
+    {
+      "id": "garfield:2026-01-21",
+      "title": "Garfield - 2026-01-21",
+      "link": "https://www.gocomics.com/garfield",
+      "date": "2026-01-21T19:21:04.777852+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/garfield-2026-01-21-b265df5763c7.jpg",
+      "html": "<p><a href=\"https://www.gocomics.com/garfield\">Garfield</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/garfield-2026-01-21-b265df5763c7.jpg\" /></p>"
+    },
+    {
+      "id": "peanuts:2026-01-21",
+      "title": "Peanuts - 2026-01-21",
+      "link": "https://www.gocomics.com/peanuts",
+      "date": "2026-01-21T19:21:04.777852+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/peanuts-2026-01-21-bbd4e213d651.jpg",
+      "html": "<p><a href=\"https://www.gocomics.com/peanuts\">Peanuts</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/peanuts-2026-01-21-bbd4e213d651.jpg\" /></p>"
+    },
+    {
+      "id": "calvinandhobbes:2026-01-21",
+      "title": "Calvin and Hobbes - 2026-01-21",
+      "link": "https://www.gocomics.com/calvinandhobbes",
+      "date": "2026-01-21T19:21:04.777852+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/calvinandhobbes-2026-01-21-456e85c38ec5.jpg",
+      "html": "<p><a href=\"https://www.gocomics.com/calvinandhobbes\">Calvin and Hobbes</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/calvinandhobbes-2026-01-21-456e85c38ec5.jpg\" /></p>"
+    },
+    {
+      "id": "farside:2026-01-21",
+      "title": "The Far Side - 2026-01-21",
+      "link": "https://www.thefarside.com/",
+      "date": "2026-01-21T19:21:04.777852+00:00",
+      "img": "https://mclars27.github.io/my-comics-rss/images/farside-2026-01-21-6be926b79fa5.jpg",
+      "html": "<p><a href=\"https://www.thefarside.com/\">The Far Side</a></p><p><img src=\"https://mclars27.github.io/my-comics-rss/images/farside-2026-01-21-6be926b79fa5.jpg\" /></p>"
+    },
     {
       "id": "garfield:2026-01-19",
       "title": "Garfield - 2026-01-19",
