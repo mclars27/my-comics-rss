@@ -14,7 +14,6 @@ COMICS = [
     {"name": "Garfield", "slug": "garfield", "url": "https://www.gocomics.com/garfield"},
     {"name": "Peanuts", "slug": "peanuts", "url": "https://www.gocomics.com/peanuts"},
     {"name": "Calvin and Hobbes", "slug": "calvinandhobbes", "url": "https://www.gocomics.com/calvinandhobbes"},
-    {"name": "The Far Side", "slug": "farside", "url": "https://www.thefarside.com/"},
 ]
 
 OUT_DIR = "docs"
