@@ -1,4 +1,3 @@
-```python
 import os
 import json
 import re
@@ -29,9 +28,9 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+
 def pages_base_url() -> str:
     """
-    IMPORTANT:
     GitHub Pages is serving from the /docs folder as the site root.
     Therefore:
       - docs/comics.xml is published at: https://<owner>.github.io/<repo>/comics.xml
@@ -42,15 +41,18 @@ def pages_base_url() -> str:
     owner, name = repo.split("/", 1)
     return f"https://{owner}.github.io/{name}"
 
+
 def load_state():
     if os.path.exists(STATE_PATH):
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     return {"seen": {}, "history": []}
 
+
 def save_state(state):
     with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2)
+
 
 def build_feed(entries):
     fg = FeedGenerator()
@@ -66,14 +68,14 @@ def build_feed(entries):
         fe.link(href=e["link"])
         fe.pubDate(datetime.fromisoformat(e["date"]))
         fe.description(e["html"])
-        # Optional:
-        # fe.enclosure(e["img"], str(e.get("length", 0)), e.get("mime", "image/jpeg"))
 
     os.makedirs(OUT_DIR, exist_ok=True)
     fg.rss_file(FEED_PATH, pretty=True)
 
+
 def _is_social_card(url: str) -> bool:
     return ("GC_Social_FB_" in url) or ("GC_Social_" in url)
+
 
 def _candidate_score(url: str) -> int:
     # Higher score = more likely to be the real strip panel
@@ -92,6 +94,7 @@ def _candidate_score(url: str) -> int:
         s -= 999
     return s
 
+
 def _walk_for_urls(obj, found):
     if isinstance(obj, dict):
         for v in obj.values():
@@ -103,7 +106,8 @@ def _walk_for_urls(obj, found):
         if obj.startswith("http://") or obj.startswith("https://"):
             found.append(obj)
 
-def fetch_real_strip_image_url(page_url: str) -> str:
+
+def fetch_gocomics_strip_image_url(page_url: str) -> str:
     r = requests.get(page_url, headers=HEADERS, timeout=30)
     r.raise_for_status()
     html = r.text
@@ -152,7 +156,53 @@ def fetch_real_strip_image_url(page_url: str) -> str:
         urls.sort(key=_candidate_score, reverse=True)
         return urls[0]
 
-    raise RuntimeError("Could not find real strip image URL (site markup may have changed)")
+    raise RuntimeError("GoComics: could not find strip image URL (markup changed?)")
+
+
+def fetch_farside_image_url(page_url: str) -> str:
+    """
+    Minimal, brittle, but usually works:
+    Try OpenGraph/Twitter image meta tags first.
+    If those are missing, fail and let the caller decide what to do.
+    """
+    r = requests.get(page_url, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+    soup = BeautifulSoup(r.text, "html.parser")
+
+    candidates = []
+
+    for prop in ["og:image", "twitter:image", "twitter:image:src"]:
+        tag = soup.find("meta", attrs={"property": prop}) or soup.find("meta", attrs={"name": prop})
+        if tag and tag.get("content"):
+            candidates.append(tag["content"].strip())
+
+    # Some sites use a relative URL in og:image
+    cleaned = []
+    for u in candidates:
+        if u.startswith("//"):
+            cleaned.append("https:" + u)
+        elif u.startswith("/"):
+            cleaned.append("https://www.thefarside.com" + u)
+        else:
+            cleaned.append(u)
+
+    # Filter out obvious logos/icons if present
+    cleaned = [u for u in cleaned if u and "logo" not in u.lower()]
+
+    if cleaned:
+        return cleaned[0]
+
+    raise RuntimeError("The Far Side: could not find image URL via og/twitter meta tags")
+
+
+def fetch_strip_image_url(page_url: str) -> str:
+    host = urlparse(page_url).netloc.lower()
+    if "gocomics.com" in host:
+        return fetch_gocomics_strip_image_url(page_url)
+    if "thefarside.com" in host:
+        return fetch_farside_image_url(page_url)
+    raise RuntimeError(f"Unsupported comic host: {host}")
+
 
 def _guess_ext(url: str) -> str:
     path = urlparse(url).path.lower()
@@ -160,6 +210,7 @@ def _guess_ext(url: str) -> str:
         if ext in path:
             return ".jpg" if ext == ".jpeg" else ext
     return ".jpg"
+
 
 def download_and_host_image(img_url: str, slug: str, day: str) -> str:
     os.makedirs(IMG_DIR, exist_ok=True)
@@ -175,8 +226,8 @@ def download_and_host_image(img_url: str, slug: str, day: str) -> str:
         with open(local_path, "wb") as f:
             f.write(ir.content)
 
-    # NOTE: no /docs here
     return f"{pages_base_url()}/images/{filename}"
+
 
 def main():
     state = load_state()
@@ -186,33 +237,50 @@ def main():
     new_items = []
 
     for c in COMICS:
-        real_img_url = fetch_real_strip_image_url(c["url"])
-        key = f"{c['slug']}:{today}"
+        try:
+            real_img_url = fetch_strip_image_url(c["url"])
+            key = f"{c['slug']}:{today}"
 
-        # Calvin is often a rerun on GoComics, publish anyway (daily feed behavior)
-        if c["slug"] != "calvinandhobbes":
-            if state["seen"].get(key) == real_img_url:
-                continue
+            # Calvin is often a rerun on GoComics, publish anyway (daily feed behavior)
+            if c["slug"] != "calvinandhobbes":
+                if state["seen"].get(key) == real_img_url:
+                    continue
 
-        hosted_img_url = download_and_host_image(real_img_url, c["slug"], today)
-        state["seen"][key] = real_img_url
+            hosted_img_url = download_and_host_image(real_img_url, c["slug"], today)
+            state["seen"][key] = real_img_url
 
-        new_items.append({
-            "id": key,
-            "title": f"{c['name']} - {today}",
-            "link": c["url"],
-            "date": now.isoformat(),
-            "img": hosted_img_url,
-            "html": (
-                f'<p><a href="{c["url"]}">{c["name"]}</a></p>'
-                f'<p><img src="{hosted_img_url}" /></p>'
-            ),
-        })
+            new_items.append({
+                "id": key,
+                "title": f"{c['name']} - {today}",
+                "link": c["url"],
+                "date": now.isoformat(),
+                "img": hosted_img_url,
+                "html": (
+                    f'<p><a href="{c["url"]}">{c["name"]}</a></p>'
+                    f'<p><img src="{hosted_img_url}" /></p>'
+                ),
+            })
+
+        except Exception as ex:
+            # Key fix: do not let one comic stop the entire feed update.
+            print(f"[WARN] Failed: {c['name']} ({c['url']}): {ex}")
+
+            # Optional: still publish a link-only entry so the day is not "missing" in your reader.
+            key = f"{c['slug']}:{today}"
+            new_items.append({
+                "id": key,
+                "title": f"{c['name']} - {today}",
+                "link": c["url"],
+                "date": now.isoformat(),
+                "img": "",
+                "html": f'<p><a href="{c["url"]}">{c["name"]}</a></p><p>(No image today)</p>',
+            })
+            continue
 
     state["history"] = (new_items + state["history"])[:90]
     build_feed(state["history"])
     save_state(state)
 
+
 if __name__ == "__main__":
     main()
-```
